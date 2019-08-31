@@ -52,7 +52,7 @@ tf.app.flags.DEFINE_string('optimizer', 'sgd',
                            """optimizer e.g. sgd/adam/radam/lookaheadxx""")
 tf.app.flags.DEFINE_float('learning_rate', 0.1,
                            """init learning rate""")
-tf.app.flags.DEFINE_integer('max_steps', 10000,
+tf.app.flags.DEFINE_integer('max_steps', 20000,
                             """Number of batches to run.""")
 tf.app.flags.DEFINE_boolean('log_device_placement', False,
                             """Whether to log device placement.""")
@@ -80,7 +80,7 @@ def train():
 
     # Build a Graph that trains the model with one batch of examples and
     # updates the model parameters.
-    train_op = cifar10.train(loss, global_step, optimizer=FLAGS.optimizer)
+    train_op = cifar10.train(loss, global_step, optimizer=FLAGS.optimizer, lr=FLAGS.learning_rate)
 
     class _LoggerHook(tf.train.SessionRunHook):
       """Logs loss and runtime."""
