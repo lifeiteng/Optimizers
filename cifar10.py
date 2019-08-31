@@ -49,7 +49,7 @@ FLAGS = tf.app.flags.FLAGS
 # Basic model parameters.
 tf.app.flags.DEFINE_integer('batch_size', 256,
                             """Number of images to process in a batch.""")
-tf.app.flags.DEFINE_boolean('use_fp16', True,
+tf.app.flags.DEFINE_boolean('use_fp16', False,
                             """Train the model using fp16.""")
 
 # Global constants describing the CIFAR-10 data set.
@@ -60,8 +60,10 @@ NUM_EXAMPLES_PER_EPOCH_FOR_EVAL = cifar10_input.NUM_EXAMPLES_PER_EPOCH_FOR_EVAL
 
 # Constants describing the training process.
 MOVING_AVERAGE_DECAY = 0.9999  # The decay to use for the moving average.
-NUM_EPOCHS_PER_DECAY = 350.0  # Epochs after which learning rate decays.
-LEARNING_RATE_DECAY_FACTOR = 0.1  # Learning rate decay factor.
+# NUM_EPOCHS_PER_DECAY = 350.0  # Epochs after which learning rate decays.
+NUM_EPOCHS_PER_DECAY = 20.0  # Epochs after which learning rate decays.
+
+LEARNING_RATE_DECAY_FACTOR = 0.5  # Learning rate decay factor.
 INITIAL_LEARNING_RATE = 0.1  # Initial learning rate.
 
 # If a model is trained with multiple GPUs, prefix all Op names with tower_name
@@ -84,8 +86,8 @@ def _activation_summary(x):
   # Remove 'tower_[0-9]/' from the name in case this is a multi-GPU training
   # session. This helps the clarity of presentation on tensorboard.
   tensor_name = re.sub('%s_[0-9]*/' % TOWER_NAME, '', x.op.name)
-  tf.summary.histogram(tensor_name + '/activations', x)
-  tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
+  # tf.summary.histogram(tensor_name + '/activations', x)
+  # tf.summary.scalar(tensor_name + '/sparsity', tf.nn.zero_fraction(x))
 
 
 def _variable_on_cpu(name, shape, initializer):
@@ -99,9 +101,9 @@ def _variable_on_cpu(name, shape, initializer):
   Returns:
     Variable Tensor
   """
-  with tf.device('/cpu:0'):
-    dtype = tf.float16 if FLAGS.use_fp16 else tf.float32
-    var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
+  # with tf.device('/cpu:0'):
+  dtype = tf.float16 if FLAGS.use_fp16 else tf.float32
+  var = tf.get_variable(name, shape, initializer=initializer, dtype=dtype)
   return var
 
 
@@ -248,6 +250,30 @@ def inference(images):
   return softmax_linear
 
 
+def softmax_summaries(loss, logits, one_hot_labels, name="softmax"):
+  """Create the softmax summaries for this cross entropy loss.
+
+  Args:
+    logits: The [batch_size, classes] float tensor representing the logits.
+    one_hot_labels: The float tensor representing actual class ids. If this is
+      [batch_size, classes], then we take the argmax of it first.
+    name: Prepended to summary scope.
+  """
+  tf.summary.scalar(name + "_loss", loss)
+
+  one_hot_labels = tf.cond(
+      tf.equal(tf.rank(one_hot_labels),
+               2), lambda: tf.to_int32(tf.argmax(one_hot_labels, 1)),
+      lambda: tf.to_int32(one_hot_labels))
+
+  in_top_1 = tf.nn.in_top_k(logits, one_hot_labels, 1)
+  tf.summary.scalar(name + "_precision_1",
+                    tf.reduce_mean(tf.to_float(in_top_1)))
+  in_top_5 = tf.nn.in_top_k(logits, one_hot_labels, 5)
+  tf.summary.scalar(name + "_precision_5",
+                    tf.reduce_mean(tf.to_float(in_top_5)))
+
+
 def loss(logits, labels):
   """Add L2Loss to all the trainable variables.
 
@@ -266,6 +292,7 @@ def loss(logits, labels):
       labels=labels, logits=logits, name='cross_entropy_per_example')
   cross_entropy_mean = tf.reduce_mean(cross_entropy, name='cross_entropy')
   tf.add_to_collection('losses', cross_entropy_mean)
+  softmax_summaries(cross_entropy_mean, logits, labels)
 
   # The total loss is defined as the cross entropy loss plus all of the weight
   # decay terms (L2 loss).
@@ -288,13 +315,13 @@ def _add_loss_summaries(total_loss):
   losses = tf.get_collection('losses')
   loss_averages_op = loss_averages.apply(losses + [total_loss])
 
-  # Attach a scalar summary to all individual losses and the total loss; do the
-  # same for the averaged version of the losses.
-  for l in losses + [total_loss]:
-    # Name each loss as '(raw)' and name the moving average version of the loss
-    # as the original loss name.
-    tf.summary.scalar(l.op.name + ' (raw)', l)
-    tf.summary.scalar(l.op.name, loss_averages.average(l))
+  # # Attach a scalar summary to all individual losses and the total loss; do the
+  # # same for the averaged version of the losses.
+  # for l in losses + [total_loss]:
+  #   # Name each loss as '(raw)' and name the moving average version of the loss
+  #   # as the original loss name.
+  #   tf.summary.scalar(l.op.name + ' (raw)', l)
+  #   tf.summary.scalar(l.op.name, loss_averages.average(l))
 
   return loss_averages_op
 
@@ -345,14 +372,14 @@ def train(total_loss, global_step, optimizer='sgd', lr=0.1):
   # Apply gradients.
   apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
 
-  # Add histograms for trainable variables.
-  for var in tf.trainable_variables():
-    tf.summary.histogram(var.op.name, var)
+  # # Add histograms for trainable variables.
+  # for var in tf.trainable_variables():
+  #   tf.summary.histogram(var.op.name, var)
 
-  # Add histograms for gradients.
-  for grad, var in grads:
-    if grad is not None:
-      tf.summary.histogram(var.op.name + '/gradients', grad)
+  # # Add histograms for gradients.
+  # for grad, var in grads:
+  #   if grad is not None:
+  #     tf.summary.histogram(var.op.name + '/gradients', grad)
 
   # Track the moving averages of all trainable variables.
   variable_averages = tf.train.ExponentialMovingAverage(
