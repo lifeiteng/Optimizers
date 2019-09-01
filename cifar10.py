@@ -40,9 +40,8 @@ import re
 import tensorflow as tf
 
 import cifar10_input
-import radam_optimizer
 import lookahead_optimizer
-import sm3_optimizer
+import radam_optimizer
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -360,10 +359,8 @@ def train(total_loss, global_step, optimizer='sgd', lr=0.1):
   OptimizerDict = {'sgd': tf.train.GradientDescentOptimizer,
                    'adam': tf.train.AdamOptimizer,
                    'radam': radam_optimizer.RAdamOptimizer,
-                   'sm3': sm3_optimizer.SM3Optimizer,
                    'lookaheadadam': tf.train.AdamOptimizer,
                    'lookaheadradam': radam_optimizer.RAdamOptimizer,
-                   'lookaheadsm3': sm3_optimizer.SM3Optimizer,
                    }
   # Compute gradients.
   with tf.control_dependencies([loss_averages_op]):

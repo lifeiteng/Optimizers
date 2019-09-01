@@ -36,8 +36,8 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from datetime import datetime
 import time
+from datetime import datetime
 
 import tensorflow as tf
 
@@ -51,7 +51,7 @@ tf.app.flags.DEFINE_string('train_dir', '/tmp/cifar10_train',
 tf.app.flags.DEFINE_string('optimizer', 'sgd',
                            """optimizer e.g. sgd/adam/radam/lookaheadxx""")
 tf.app.flags.DEFINE_float('learning_rate', 0.1,
-                           """init learning rate""")
+                          """init learning rate""")
 tf.app.flags.DEFINE_integer('max_steps', 20000,
                             """Number of batches to run.""")
 tf.app.flags.DEFINE_boolean('log_device_placement', False,
