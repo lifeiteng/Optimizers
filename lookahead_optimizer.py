@@ -123,7 +123,7 @@ class LookaheadOptimizer(optimizer.Optimizer):
         return control_flow_ops.group(*(local_assignments))
 
     with ops.control_dependencies([local_update]):
-      condition = math_ops.equal(math_ops.mod(self._get_step_accumulator() + 1, self._interval_steps), 0)
+      condition = math_ops.equal(math_ops.mod(self._get_step_accumulator(), self._interval_steps), 0)
       conditional_update = control_flow_ops.cond(condition,
                                                  true_fn=_update_variables,
                                                  false_fn=control_flow_ops.no_op)

@@ -56,7 +56,7 @@ def radam_update_numpy(param,
 
   param_t = param - lr * update
 
-  if (t + 1) % interval_steps == 0:
+  if t % interval_steps == 0:
     param_t = (1.0 - alpha) * init_v + alpha * param_t
 
   return param_t, m_t, v_t
@@ -116,7 +116,7 @@ class LookaheadOptimizerTest(test.TestCase):
                                                alpha=opt._alpha,
                                                interval_steps=opt._interval_steps)
 
-          if (t + 1) % opt._interval_steps == 0:
+          if t % opt._interval_steps == 0:
             init_vars = [var0_np, var1_np]
 
           if not use_resource:
@@ -248,7 +248,7 @@ class LookaheadOptimizerTest(test.TestCase):
                                                alpha=opt._alpha,
                                                interval_steps=opt._interval_steps)
 
-          if (t + 1) % opt._interval_steps == 0:
+          if t % opt._interval_steps == 0:
             init_vars = [var0_np, var1_np]
 
           if not use_resource:
@@ -314,7 +314,7 @@ class LookaheadOptimizerTest(test.TestCase):
                                                alpha=opt._alpha,
                                                interval_steps=opt._interval_steps)
 
-          if (t + 1) % opt._interval_steps == 0:
+          if t % opt._interval_steps == 0:
             init_vars = [var0_np, var1_np]
 
           # Validate updated params
@@ -367,7 +367,7 @@ class LookaheadOptimizerTest(test.TestCase):
                                                alpha=opt._alpha,
                                                interval_steps=opt._interval_steps)
 
-          if (t + 1) % opt._interval_steps == 0:
+          if t % opt._interval_steps == 0:
             init_vars = [var0_np, var1_np]
 
           # Validate updated params
