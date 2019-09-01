@@ -342,14 +342,14 @@ def train(total_loss, global_step, optimizer='sgd', lr=0.1):
   num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
   decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
 
-  # # Decay the learning rate exponentially based on the number of steps.
-  # lr = tf.train.exponential_decay(lr,
-  #                                 global_step,
-  #                                 decay_steps,
-  #                                 LEARNING_RATE_DECAY_FACTOR,
-  #                                 staircase=True)
-  warm_up_step = 1000.0
-  lr = lr * tf.cast(tf.minimum(1.0, (warm_up_step / tf.cast(global_step, tf.float32)) ** 2), tf.float32)
+  # Decay the learning rate exponentially based on the number of steps.
+  lr = tf.train.exponential_decay(lr,
+                                  global_step,
+                                  decay_steps,
+                                  LEARNING_RATE_DECAY_FACTOR,
+                                  staircase=True)
+  # warm_up_step = 1000.0
+  # lr = lr * tf.cast(tf.minimum(1.0, (warm_up_step / tf.cast(global_step, tf.float32)) ** 2), tf.float32)
 
   tf.summary.scalar('learning_rate', lr)
 
