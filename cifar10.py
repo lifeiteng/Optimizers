@@ -64,7 +64,7 @@ MOVING_AVERAGE_DECAY = 0.9999  # The decay to use for the moving average.
 NUM_EPOCHS_PER_DECAY = 20.0  # Epochs after which learning rate decays.
 
 LEARNING_RATE_DECAY_FACTOR = 0.5  # Learning rate decay factor.
-INITIAL_LEARNING_RATE = 0.1  # Initial learning rate.
+# INITIAL_LEARNING_RATE = 0.1  # Initial learning rate.
 
 # If a model is trained with multiple GPUs, prefix all Op names with tower_name
 # to differentiate the operations. Note that this prefix is removed from the
@@ -128,9 +128,9 @@ def _variable_with_weight_decay(name, shape, stddev, wd):
       name,
       shape,
       tf.truncated_normal_initializer(stddev=stddev, dtype=dtype))
-  if wd is not None:
-    weight_decay = tf.multiply(tf.nn.l2_loss(var), wd, name='weight_loss')
-    tf.add_to_collection('losses', weight_decay)
+  # if wd is not None:
+  #   weight_decay = tf.multiply(tf.nn.l2_loss(var), wd, name='weight_loss')
+  #   tf.add_to_collection('losses', weight_decay)
   return var
 
 
@@ -343,12 +343,15 @@ def train(total_loss, global_step, optimizer='sgd', lr=0.1):
   num_batches_per_epoch = NUM_EXAMPLES_PER_EPOCH_FOR_TRAIN / FLAGS.batch_size
   decay_steps = int(num_batches_per_epoch * NUM_EPOCHS_PER_DECAY)
 
-  # Decay the learning rate exponentially based on the number of steps.
-  lr = tf.train.exponential_decay(lr,
-                                  global_step,
-                                  decay_steps,
-                                  LEARNING_RATE_DECAY_FACTOR,
-                                  staircase=True)
+  # # Decay the learning rate exponentially based on the number of steps.
+  # lr = tf.train.exponential_decay(lr,
+  #                                 global_step,
+  #                                 decay_steps,
+  #                                 LEARNING_RATE_DECAY_FACTOR,
+  #                                 staircase=True)
+  warm_up_step = 1000.0
+  lr = lr * tf.cast(tf.minimum(1.0, (warm_up_step / tf.cast(global_step, tf.float32)) ** 2), tf.float32)
+
   tf.summary.scalar('learning_rate', lr)
 
   # Generate moving averages of all losses and associated summaries.
@@ -381,10 +384,10 @@ def train(total_loss, global_step, optimizer='sgd', lr=0.1):
   #   if grad is not None:
   #     tf.summary.histogram(var.op.name + '/gradients', grad)
 
-  # Track the moving averages of all trainable variables.
-  variable_averages = tf.train.ExponentialMovingAverage(
-      MOVING_AVERAGE_DECAY, global_step)
-  with tf.control_dependencies([apply_gradient_op]):
-    variables_averages_op = variable_averages.apply(tf.trainable_variables())
+  # # Track the moving averages of all trainable variables.
+  # variable_averages = tf.train.ExponentialMovingAverage(
+  #     MOVING_AVERAGE_DECAY, global_step)
+  # with tf.control_dependencies([apply_gradient_op]):
+  #   variables_averages_op = variable_averages.apply(tf.trainable_variables())
 
-  return variables_averages_op
+  return apply_gradient_op
